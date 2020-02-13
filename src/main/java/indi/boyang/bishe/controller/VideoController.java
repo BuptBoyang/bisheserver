@@ -46,8 +46,13 @@ public class VideoController {
 	private String saveFile(MultipartFile mFile) throws IOException {
 		IPFS ipfs = new IPFS("/ip4/127.0.0.1/tcp/5001");
 		ipfs.refs.local();
+		File dir = new File("upload\\");
+		if(!dir.exists()){
+			System.out.println(dir.mkdir());
+		}
+
 		String result = "";
-		String path = "D:\\upload\\" + mFile.getOriginalFilename();
+		String path = dir.getAbsolutePath() + "\\" + mFile.getOriginalFilename();
 		File file = new File(path);
 		mFile.transferTo(file);
 		NamedStreamable.FileWrapper fw = new NamedStreamable.FileWrapper(file);
