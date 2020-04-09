@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import indi.boyang.bishe.util.MyWeb3j;
 import io.ipfs.api.IPFS;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import indi.boyang.bishe.model.VideoRepository;
@@ -17,30 +19,44 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 public class VideoController {
 	
-	private final VideoRepository repository;
+	public static VideoRepository videoRepository;
 
-	VideoController(VideoRepository repository) {
-	    this.repository = repository;
+	VideoController(VideoRepository videoRepository) {
+	    VideoController.videoRepository = videoRepository;
 	}
 	
 	@GetMapping("/videos")
     List<Video> all() {
-		return repository.findAll();
+		return videoRepository.findAll();
     }
 	
 	@GetMapping("/videos/{id}")
-	Optional<Video> getVideo(@PathVariable("id") long id){
-		return repository.findById(id);
+	Optional<Video> getVideo(@PathVariable("id") long id,
+							 @RequestParam("operator") String operator) throws Exception {
+		Video video = videoRepository.findById(id).get();
+		MyWeb3j.transferERC20Token(operator,video.getUploader(),"1");
+		return videoRepository.findById(id);
 	}
 
 	@PostMapping("/videos")
 	public Video uploadFile(@RequestParam("title") String title,
 							@RequestParam("pic") MultipartFile picFile,
-							@RequestParam("video") MultipartFile videoFile
+							@RequestParam("video") MultipartFile videoFile,
+							@RequestParam("uploader") String uploader
 	) throws IOException {
 		String videoHash = saveFile(videoFile);
 		String picHash = saveFile(picFile);
-		return repository.save(new Video(videoHash,picHash,title));
+		return videoRepository.save(new Video(videoHash,picHash,title,uploader));
+	}
+
+	@PostMapping("/videos/{id}/motivation")
+	public ResponseEntity<String> like(@PathVariable("id") long id,
+									   @RequestParam("operator") String operator
+	) throws Exception {
+		Video video = videoRepository.findById(id).get();
+		MyWeb3j.transferERC20Token(operator,video.getUploader(),"2");
+		System.out.println(id + operator + "liked");
+		return ResponseEntity.ok("like");
 	}
 
 	private String saveFile(MultipartFile mFile) throws IOException {
@@ -65,6 +81,5 @@ public class VideoController {
 		}
 		return result;
 	}
-
 
 }

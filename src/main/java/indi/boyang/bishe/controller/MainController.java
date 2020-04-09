@@ -12,4 +12,6 @@ public class MainController {
     List<String> listAPI() {
         return Arrays.asList("/videos","/videos/{id}");
     }
+    @GetMapping("/test")
+    String test(){ return "test"; }
 }
